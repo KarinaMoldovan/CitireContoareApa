@@ -5,43 +5,38 @@
     ViewData["Title"] = "Create";
 }
 
-<h1>Create</h1>
+<h1>Înregistrează Citire Contor</h1>
 
-<h4>Factura</h4>
-<hr />
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <form method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
             <div class="form-group">
-                <span class="text-danger">*</span>
-                <label asp-for="Factura.DataEmitere" class="control-label"></label>
-                <input asp-for="Factura.DataEmitere" class="form-control" />
-                <span asp-validation-for="Factura.DataEmitere" class="text-danger"></span>
+                <label for="ContorId">Selectează Contor</label>
+                <select asp-for="ContorId" class="form-control" asp-items="ViewBag.ContorId"></select>
+                <span asp-validation-for="ContorId" class="text-danger"></span>
             </div>
+
             <div class="form-group">
-                <span class="text-danger">*</span>
-                <label asp-for="Factura.Suma" class="control-label"></label>
-                <input asp-for="Factura.Suma" class="form-control" />
-                <span asp-validation-for="Factura.Suma" class="text-danger"></span>
+                <label for="ValoareActuala">Introduceți Citirea Actuală</label>
+                <input asp-for="ValoareActuala" class="form-control" type="number" step="0.01" />
+                <span asp-validation-for="ValoareActuala" class="text-danger"></span>
             </div>
+
             <div class="form-group">
-                <span class="text-danger">*</span>
-                <label asp-for="Factura.ContorId" class="control-label"></label>
-                <select asp-for="Factura.ContorId" class ="form-control" asp-items="ViewBag.ContorId"></select>
-            </div>
-           
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                <input type="submit" value="Înregistrează Citire" class="btn btn-primary" />
             </div>
         </form>
     </div>
 </div>
 
 <div>
-    <a asp-page="Index">Back to List</a>
+    <a asp-page="Index">Înapoi la Listă</a>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

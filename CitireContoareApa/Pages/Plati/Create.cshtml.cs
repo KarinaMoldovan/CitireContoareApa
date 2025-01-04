@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -12,23 +11,22 @@ namespace CitireContoareApa.Pages.Plati
 {
     public class CreateModel : PageModel
     {
-        private readonly CitireContoareApa.Data.CitireContoareApaContext _context;
+        private readonly CitireContoareApaContext _context;
 
-        public CreateModel(CitireContoareApa.Data.CitireContoareApaContext context)
+        public CreateModel(CitireContoareApaContext context)
         {
             _context = context;
-        }
-
-        public IActionResult OnGet()
-        {
-        ViewData["FacturaId"] = new SelectList(_context.Factura, "FacturaId", "FacturaId");
-            return Page();
         }
 
         [BindProperty]
         public Plata Plata { get; set; } = default!;
 
-        // For more information, see https://aka.ms/RazorPagesCRUD.
+        public IActionResult OnGet()
+        {
+            ViewData["FacturaId"] = new SelectList(_context.Factura, "FacturaId", "FacturaId");
+            return Page();
+        }
+
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid)
@@ -36,6 +34,30 @@ namespace CitireContoareApa.Pages.Plati
                 return Page();
             }
 
+            // Obține factura selectată
+            var factura = _context.Factura.FirstOrDefault(f => f.FacturaId == Plata.FacturaId);
+
+            if (factura == null)
+            {
+                ModelState.AddModelError(string.Empty, "Factura selectată nu există.");
+                ViewData["FacturaId"] = new SelectList(_context.Factura, "FacturaId", "FacturaId");
+                return Page();
+            }
+
+            // Setează DataPlatii ca fiind data curentă
+            Plata.DataPlatii = DateTime.Now;
+
+            // Calculează penalizarea
+            var dataScadenta = factura.DataEmitere.AddDays(14); // Scadența este la 14 zile după înregistrare
+            var zileRestante = (DateTime.Now - dataScadenta).Days;
+            zileRestante = Math.Max(zileRestante, 0); // Penalizările sunt doar pentru zilele restante
+
+            var penalizare = 0.01m * factura.Suma * zileRestante;
+
+            // Setează SumaPlatita ca suma facturii + penalizarea
+            Plata.SumaPlatita = factura.Suma + penalizare;
+
+            // Adaugă plata în baza de date
             _context.Plata.Add(Plata);
             await _context.SaveChangesAsync();
 

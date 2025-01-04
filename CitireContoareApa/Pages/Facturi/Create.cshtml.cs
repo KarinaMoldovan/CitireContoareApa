@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -12,32 +11,76 @@ namespace CitireContoareApa.Pages.Facturi
 {
     public class CreateModel : PageModel
     {
-        private readonly CitireContoareApa.Data.CitireContoareApaContext _context;
+        private readonly CitireContoareApaContext _context;
 
-        public CreateModel(CitireContoareApa.Data.CitireContoareApaContext context)
+        public CreateModel(CitireContoareApaContext context)
         {
             _context = context;
         }
 
+        [BindProperty]
+        public int ContorId { get; set; }
+
+        [BindProperty]
+        public decimal ValoareActuala { get; set; }
+
         public IActionResult OnGet()
         {
-        ViewData["ContorId"] = new SelectList(_context.Contor, "ContorId", "NumarSerie");
-        ViewData["PlataId"] = new SelectList(_context.Plata, "PlataId", "PlataId");
+            // Populăm dropdown-ul cu contoarele disponibile
+            ViewData["ContorId"] = new SelectList(_context.Contor, "ContorId", "NumarSerie");
             return Page();
         }
 
-        [BindProperty]
-        public Factura Factura { get; set; } = default!;
-
-        // For more information, see https://aka.ms/RazorPagesCRUD.
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid)
             {
+                // Reîncărcăm dropdown-ul dacă datele nu sunt valide
+                ViewData["ContorId"] = new SelectList(_context.Contor, "ContorId", "NumarSerie");
                 return Page();
             }
 
-            _context.Factura.Add(Factura);
+            // Găsim contorul selectat
+            var contor = await _context.Contor.FindAsync(ContorId);
+            if (contor == null)
+            {
+                ModelState.AddModelError("", "Contorul selectat nu există.");
+                return Page();
+            }
+
+            // Calculăm consumul
+            decimal consum = ValoareActuala - contor.ValoareActuala;
+            if (consum < 0)
+            {
+                ModelState.AddModelError("", "Citirea actuală nu poate fi mai mică decât valoarea anterioară.");
+                return Page();
+            }
+
+            // Actualizăm valoarea actuală a contorului
+            contor.ValoareActuala = ValoareActuala;
+
+            // Obținem cel mai recent tarif
+            var tarif = _context.Tarif.OrderByDescending(t => t.TarifId).FirstOrDefault();
+            if (tarif == null)
+            {
+                ModelState.AddModelError("", "Nu există niciun tarif disponibil pentru calcul.");
+                return Page();
+            }
+
+            // Calculăm suma facturii
+            decimal sumaFactura = consum * tarif.PretPeMetruCub;
+
+            // Creăm factura
+            var factura = new Factura
+            {
+                DataEmitere = DateTime.Now,
+                Suma = sumaFactura,
+                ContorId = ContorId,
+            };
+
+            // Salvăm modificările în baza de date
+            _context.Contor.Update(contor);
+            _context.Factura.Add(factura);
             await _context.SaveChangesAsync();
 
             return RedirectToPage("./Index");
