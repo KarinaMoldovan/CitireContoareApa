@@ -1,12 +1,20 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using CitireContoareApa.Data;
+using Microsoft.AspNetCore.Identity;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddDbContext<CitireContoareApaContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CitireContoareApaContext") ?? throw new InvalidOperationException("Connection string 'CitireContoareApaContext' not found.")));
+
+builder.Services.AddDbContext<LibraryIdentityContext>(options =>
+
+options.UseSqlServer(builder.Configuration.GetConnectionString("CitireContoareApaContext") ?? throw new InvalidOperationException("Connectionstring 'CitireContoareApaContext' not found.")));
+
+
+builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<LibraryIdentityContext>();
 
 var app = builder.Build();
 
