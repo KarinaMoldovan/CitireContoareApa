@@ -8,13 +8,11 @@ namespace CitireContoareApa.Models
         [Key]
         public int UserId { get; set; }
 
-        [Required]
         [StringLength(100)]
-        public string Nume { get; set; }
+        public string ?Nume { get; set; }
 
-        [Required]
         [StringLength(100)]
-        public string Prenume { get; set; }
+        public string ?Prenume { get; set; }
 
         [Required]
         [EmailAddress]

@@ -5,17 +5,19 @@ using Microsoft.AspNetCore.Identity;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddRazorPages();
-builder.Services.AddDbContext<CitireContoareApaContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("CitireContoareApaContext") ?? throw new InvalidOperationException("Connection string 'CitireContoareApaContext' not found.")));
-
 builder.Services.AddDbContext<LibraryIdentityContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("LibraryIdentityContextConnection")
+    ?? throw new InvalidOperationException("Connection string 'LibraryIdentityContextConnection' not found.")));
 
-options.UseSqlServer(builder.Configuration.GetConnectionString("CitireContoareApaContext") ?? throw new InvalidOperationException("Connectionstring 'CitireContoareApaContext' not found.")));
+builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddEntityFrameworkStores<LibraryIdentityContext>();
+
+builder.Services.AddDbContext<CitireContoareApaContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("CitireContoareApaContext")
+    ?? throw new InvalidOperationException("Connection string 'CitireContoareApaContext' not found.")));
 
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<LibraryIdentityContext>();
-
+builder.Services.AddRazorPages();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

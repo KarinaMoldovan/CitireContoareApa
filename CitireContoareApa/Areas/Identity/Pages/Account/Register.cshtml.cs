@@ -126,7 +126,7 @@ namespace CitireContoareApa.Areas.Identity.Pages.Account
             returnUrl ??= Url.Content("~/");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
                 return Page();
             }
@@ -135,44 +135,57 @@ namespace CitireContoareApa.Areas.Identity.Pages.Account
             await _userStore.SetUserNameAsync(identityUser, Input.Email, CancellationToken.None);
             await _emailStore.SetEmailAsync(identityUser, Input.Email, CancellationToken.None);
 
-            // Creare utilizator în Identity
+            // Create user in Identity
             var result = await _userManager.CreateAsync(identityUser, Input.Password);
+
+            if (string.IsNullOrEmpty(User.Nume) || string.IsNullOrEmpty(User.Prenume))
+            {
+                ModelState.AddModelError("", "Numele și prenumele sunt obligatorii.");
+            }
 
             if (result.Succeeded)
             {
-                // Salvare în tabela User
-                var user = new CitireContoareApa.Models.User
+                // Save user in the User table
+                try
                 {
-                    Email = Input.Email,
-                    Nume = Input.Nume,
-                    Prenume = Input.Prenume
-                };
+                    var user = new User
+                    {
+                        Nume = User.Nume,
+                        Prenume = User.Prenume,
+                        Email = User.Email
+                    };
 
-                _context.User.Add(user);
-                await _context.SaveChangesAsync();
+                    _context.User.Add(user);
+                    await _context.SaveChangesAsync();
 
-                _logger.LogInformation("User created a new account with password.");
+                    _logger.LogInformation("User created a new account with password.");
 
-                var userId = await _userManager.GetUserIdAsync(identityUser);
-                var code = await _userManager.GenerateEmailConfirmationTokenAsync(identityUser);
-                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                var callbackUrl = Url.Page(
-                    "/Account/ConfirmEmail",
-                    pageHandler: null,
-                    values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
-                    protocol: Request.Scheme);
+                    var userId = await _userManager.GetUserIdAsync(identityUser);
+                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(identityUser);
+                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                    var callbackUrl = Url.Page(
+                        "/Account/ConfirmEmail",
+                        pageHandler: null,
+                        values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
+                        protocol: Request.Scheme);
 
-                await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                    $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
-                if (_userManager.Options.SignIn.RequireConfirmedAccount)
-                {
-                    return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
+                    if (_userManager.Options.SignIn.RequireConfirmedAccount)
+                    {
+                        return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
+                    }
+                    else
+                    {
+                        await _signInManager.SignInAsync(identityUser, isPersistent: false);
+                        return LocalRedirect(returnUrl);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    await _signInManager.SignInAsync(identityUser, isPersistent: false);
-                    return LocalRedirect(returnUrl);
+                    _logger.LogError("An error occurred while saving user details: {Message}", ex.Message);
+                    ModelState.AddModelError(string.Empty, "An error occurred while creating your account.");
                 }
             }
 
@@ -183,6 +196,8 @@ namespace CitireContoareApa.Areas.Identity.Pages.Account
 
             return Page();
         }
+
+
 
 
         private IdentityUser CreateUser()

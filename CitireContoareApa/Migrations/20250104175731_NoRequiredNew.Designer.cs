@@ -4,6 +4,7 @@ using CitireContoareApa.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CitireContoareApa.Migrations
 {
     [DbContext(typeof(CitireContoareApaContext))]
-    partial class CitireContoareApaContextModelSnapshot : ModelSnapshot
+    [Migration("20250104175731_NoRequiredNew")]
+    partial class NoRequiredNew
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
